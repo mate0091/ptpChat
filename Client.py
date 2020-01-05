@@ -1,13 +1,15 @@
 from socket import AF_INET, socket, SOCK_STREAM
 from threading import Thread
 import tkinter
+import ssl
+
 
 
 def receive():
     """Handles receiving of messages."""
     while True:
         try:
-            msg = client_socket.recv(BUFSIZ).decode("utf8")
+            msg = secure_socket.recv(BUFSIZ).decode("utf8")
             msg_list.insert(tkinter.END, msg)
         except OSError:  # Possibly client has left the chat.
             break
@@ -17,9 +19,9 @@ def send(event=None):  # event is passed by binders.
     """Handles sending of messages."""
     msg = my_msg.get()
     my_msg.set("")  # Clears input field.
-    client_socket.send(bytes(msg, "utf8"))
+    secure_socket.send(bytes(msg, "utf8"))
     if msg == "{quit}":
-        client_socket.close()
+        secure_socket.close()
         top.quit()
 
 
@@ -60,8 +62,12 @@ else:
 BUFSIZ = 1024
 ADDR = (HOST, PORT)
 
+context = ssl.create_default_context(ssl.Purpose.SERVER_AUTH, cafile='server.crt')
+context.load_cert_chain(certfile='client.crt', keyfile='client.key')
+
 client_socket = socket(AF_INET, SOCK_STREAM)
-client_socket.connect(ADDR)
+secure_socket = context.wrap_socket(client_socket, server_side=False, server_hostname='chat.proj')
+secure_socket.connect(ADDR)
 
 receive_thread = Thread(target=receive)
 receive_thread.start()
