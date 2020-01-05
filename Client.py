@@ -2,7 +2,7 @@ from socket import AF_INET, socket, SOCK_STREAM
 from threading import Thread
 import tkinter
 import ssl
-
+import rpyc
 
 
 def receive():
@@ -19,6 +19,7 @@ def send(event=None):  # event is passed by binders.
     """Handles sending of messages."""
     msg = my_msg.get()
     my_msg.set("")  # Clears input field.
+    msg = c.root.filter_sentence(msg)
     secure_socket.send(bytes(msg, "utf8"))
     if msg == "{quit}":
         secure_socket.close()
@@ -29,6 +30,9 @@ def on_closing(event=None):
     """This function is to be called when the window is closed."""
     my_msg.set("{quit}")
     send()
+
+
+c = rpyc.connect("localhost", 18861)
 
 top = tkinter.Tk()
 top.title("Chatter")
